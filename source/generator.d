@@ -81,7 +81,7 @@ struct WGPUChainedStructOut
 class Generator
 {
     string[string] basicTypes;
-    string input;
+    JSONValue[string] root;
     
     this(string input)
     {
@@ -97,7 +97,7 @@ class Generator
             "double": "double"
         ];
         
-        this.input = input;
+        root = parseJSON(input).get!(JSONValue[string]);
     }
     
     string toWGPUType(string s)
@@ -123,8 +123,6 @@ class Generator
         string[] objects;
         string[] enums;
         string[] structs;
-        
-        auto root = parseJSON(input).get!(JSONValue[string]);
         
         foreach(symbolName, symbol; root)
         if (symbol.type == JSONType.object)
