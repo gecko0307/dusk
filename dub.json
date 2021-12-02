@@ -1,0 +1,9 @@
+{
+    "name": "dusk",
+    "description": "WebGPU binding generator for D that uses dawn.json",
+    "copyright": "Copyright © 2021 Timur Gafarov",
+    "license": "BSL-1.0",
+    "authors": [
+        "Timur Gafarov"
+    ]
+}

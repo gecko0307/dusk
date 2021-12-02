@@ -1,0 +1,17 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/dusk
+*.so
+*.dylib
+*.dll
+*.a
+*.lib
+dusk-test-*
+*.exe
+*.o
+*.obj
+*.lst
+types.d
+funcs.d
