@@ -29,6 +29,8 @@ module generator;
 
 import std.algorithm;
 import std.array;
+import std.ascii: toUpper;
+import std.conv;
 import std.format;
 import std.json;
 import std.stdio;
@@ -39,13 +41,9 @@ enum WGPUChain = "WGPUChainedStruct chain";
 enum WGPUNextInChainPtr = "WGPUChainedStruct* nextInChain";
 enum WGPUNextInChainConstPtr = "const(WGPUChainedStruct)* nextInChain";
 
-bool isAbbreviation(string s) pure @nogc
+string capitalizeFirst(string s) pure @trusted
 {
-    if (s == "1D") return true;
-    else if (s == "2D") return true;
-    else if (s == "3D") return true;
-    else if (s == "HWND") return true;
-    else return false;
+    return toUpper(s[0]) ~ s[1..$];
 }
 
 string toCamelCase(in string str, string sep = "_", bool firstCapitalize = true) pure @trusted
@@ -55,16 +53,13 @@ string toCamelCase(in string str, string sep = "_", bool firstCapitalize = true)
     foreach(i, v; arr)
     {
         auto bb = v;
-        if (!isAbbreviation(bb))
+        if (i == 0)
         {
-            if (i == 0)
-            {
-                if (firstCapitalize)
-                    bb = bb.capitalize;
-            }
-            else
-                bb = bb.capitalize;
+            if (firstCapitalize)
+                bb = bb.capitalizeFirst;
         }
+        else
+            bb = bb.capitalizeFirst;
         ret ~= bb;
     }
     return ret.join("");
@@ -118,9 +113,15 @@ class Generator
         return toCamelCase(s, " ", false);
     }
     
+    string toWGPUEnumValue(string s)
+    {
+        return toCamelCase(s, " ", true);
+    }
+    
     string generateTypes(string prependBlock = "")
     {
         string[] objects;
+        string[] enums;
         string[] structs;
         
         auto root = parseJSON(input).get!(JSONValue[string]);
@@ -133,6 +134,8 @@ class Generator
                 string category = ("category" in symbol).str;
                 if (category == "object")
                     objects ~= generateObject(symbolName, symbol);
+                else if (category == "enum" || category == "bitmask")
+                    enums ~= generateEnum(symbolName, symbol);
                 else if (category == "structure")
                     structs ~= generateStruct(symbolName, symbol);
             }
@@ -141,6 +144,8 @@ class Generator
         string output = prependBlock;
         output ~= "\n";
         output ~= objects.sort.join();
+        output ~= "\n";
+        output ~= enums.sort.join();
         output ~= "\n";
         output ~= chainedStructBlock;
         output ~= structs.sort.join();
@@ -151,6 +156,34 @@ class Generator
     {
         string output = "";
         output ~= format("alias %s = void*;\n", toWGPUType(symbolName));
+        return output;
+    }
+    
+    string generateEnum(string symbolName, JSONValue symbol)
+    {
+        string output = "";
+        output ~= format("enum %s\n", toWGPUType(symbolName));
+        output ~= "{\n";
+        
+        if ("values" in symbol)
+        {
+            auto values = ("values" in symbol).array;
+            foreach(i, v; values)
+            {
+                string name = ("name" in v).str;
+                string value = ("value" in v).integer.to!string;
+                
+                name = toWGPUEnumValue(name);
+                if (name == "1D") name = "D1";
+                else if (name == "2D") name = "D2";
+                else if (name == "3D") name = "D3";
+                else if (name == "2DArray") name = "D2Array";
+                
+                output ~= format("    %s = %s%s\n", name, value, (i < values.length - 1)? "," : "");
+            }
+        }
+        
+        output ~= "}\n\n";
         return output;
     }
     
@@ -182,7 +215,7 @@ class Generator
                     output ~= format("    %s;\n", WGPUChain);
             }
         }
-
+        
         auto members = ("members" in symbol).array;
         foreach(i, member; members)
         {
