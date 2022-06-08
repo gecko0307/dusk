@@ -133,7 +133,10 @@ class Generator
             {
                 string category = ("category" in symbol).str;
                 if (category == "object")
+                {
                     objects ~= generateObject(symbolName, symbol);
+                    // TODO: process object methods
+                }
                 else if (category == "enum" || category == "bitmask")
                     enums ~= generateEnum(symbolName, symbol);
                 else if (category == "structure")
