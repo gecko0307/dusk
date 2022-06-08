@@ -89,6 +89,8 @@ class Generator
             "void": "void",
             "bool": "bool",
             "char": "char",
+            "int16_t": "short",
+            "uint16_t": "ushort",
             "int32_t": "int",
             "int64_t": "long",
             "uint32_t": "uint",
@@ -223,6 +225,12 @@ class Generator
             
             memberName = toWGPUProperty(memberName);
             memberType = toWGPUType(memberType);
+            
+            //if (symbolName == "device descriptor" && memberName == "label")
+            //    continue;
+            
+            if (memberName == "module")
+                memberName = "modul";
             
             if ("annotation" in member)
                 memberAnnotation = ("annotation" in member).str;
